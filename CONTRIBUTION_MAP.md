@@ -1,42 +1,63 @@
 # Team Contribution & Peer-Review Map (3-Member Team)
 
-## Squad Roster
-1. **Mohammad Bustami** — Lead Detection Engineer, SIEM Architect & Incident A Lead Blue-Team Investigator
-2. **Saif Asender** — Detection Engineer, Linux/Windows Telemetry Engineer & Incident A Red-Team Operator
-3. **Mohammad Alodeh** — Detection Engineer, False-Positive/Tuning Analyst (Incident B) & Incident Readiness Lead
+> **Graduation Project Rule**: *Teams of 3–4. Every student writes 2+ rules and owns 1+ Part 2 task. Put this in a 1-page contribution map. Everything goes in the team Git repo.*
+
+---
+
+## Squad Roster & High-Level Roles
+1. **Mohammad Bustami** — SIEM Architect, Lead Detection Engineer (4 Rules + Correlation) & Incident A Lead Blue-Team Investigator
+2. **Saif Asender** — Linux/Windows Telemetry Engineer, Detection Engineer (3 Rules) & Incident A Red-Team Operator
+3. **Mohammad Alodeh** — Detection Engineer (3 Rules), Tuning & False-Positive Lead (Incident B) & Incident Readiness Lead
 
 ---
 
 ## 1. Detection Rule Ownership & Peer Review Matrix (Sub-tasks 1.2, 1.3, 1.4)
 
-Every team member authored at least 3 detection rules and peer-reviewed a teammate's Detection Cards as required by Sub-tasks 1.2 and 1.4:
+*Requirement: Every student writes 2+ rules.*  
+**Delivered: Mohammad Bustami = 4 Rules; Saif Asender = 3 Rules; Mohammad Alodeh = 3 Rules.**
 
-| Rule ID | MITRE ATT&CK v19 | Rule Title | Primary Author | Peer Reviewer (Approved) | Detection Card |
+| Rule ID | What It Detects (In Plain Text) | ATT&CK v19 | Primary Author (Owner) | Peer Reviewer (Approved) | Detection Card |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **`100005`** | `T1059.001` (Execution) | Suspicious PowerShell Execution (`-enc` / Download Cradle) | **Mohammad Bustami** | **Saif Asender** | [`card_01_rule_100005.md`](detections/cards/card_01_rule_100005.md) |
-| **`100007` + `100200`** | `T1110` / `T1078` (Credential Access) | Brute Force (5x `4625` in 2m) -> Logon Success (`4624` in 5m) Correlation | **Mohammad Bustami** | **Mohammad Alodeh** | [`card_02_rule_100007.md`](detections/cards/card_02_rule_100007.md) |
-| **`100201`** | `T1003.001` (Credential Access) | LSASS Process Memory Access (`Sysmon Event 10`) | **Mohammad Bustami** | **Saif Asender** | [`card_03_rule_100201.md`](detections/cards/card_03_rule_100201.md) |
-| **`100013`** | `T1105` (Command & Control) | LOLBin File Download (`certutil` / `bitsadmin` / `mshta`) | **Saif Asender** | **Mohammad Bustami** | [`card_04_rule_100013.md`](detections/cards/card_04_rule_100013.md) |
-| **`100203`** | `T1053.003` (Persistence) | Linux Cron Job Modification (`/usr/bin/crontab`) | **Saif Asender** | **Mohammad Alodeh** | [`card_05_rule_100203.md`](detections/cards/card_05_rule_100203.md) |
-| **`100202`** | `T1098.004` (Persistence) | Linux SSH `authorized_keys` Modification | **Saif Asender** | **Mohammad Bustami** | [`card_06_rule_100202.md`](detections/cards/card_06_rule_100202.md) |
-| **`100204`** | `T1021.001` (Lateral Movement) | Remote Desktop (`LogonType 10`) from Non-Local IP | **Mohammad Alodeh** | **Mohammad Bustami** | [`card_07_rule_100204.md`](detections/cards/card_07_rule_100204.md) |
-| **`100205`** | `T1218.011` (Stealth `TA0005`) | Suspicious `rundll32.exe` Proxy Execution | **Mohammad Alodeh** | **Saif Asender** | [`card_08_rule_100205.md`](detections/cards/card_08_rule_100205.md) |
-| **`100206`** | `T1547.001` (Persistence) | Registry `Run` / `RunOnce` Value Set (`Sysmon Event 13`) | **Mohammad Alodeh** | **Mohammad Bustami** | [`card_09_rule_100206.md`](detections/cards/card_09_rule_100206.md) |
-| **`100207`** | `T1685.005` (Defense Impairment `TA0112`) | Windows Security (`1102`) or System (`104`) Audit Log Cleared | **Mohammad Bustami** | **Mohammad Alodeh** | [`card_10_rule_100207.md`](detections/cards/card_10_rule_100207.md) |
+| **`100005`** | Suspicious PowerShell (encoded / cradle) | `T1059.001` (Execution) | **Mohammad Bustami** | **Saif Asender** | [`card_01_rule_100005.md`](detections/cards/card_01_rule_100005.md) |
+| **`100007` + `100200`** | 5 failed logons -> Logon Success Correlation | `T1110 / T1078` (Cred Access) | **Mohammad Bustami** | **Mohammad Alodeh** | [`card_02_rule_100007.md`](detections/cards/card_02_rule_100007.md) |
+| **`100201`** | LSASS Memory Access (Credential Dumping) | `T1003.001` (Cred Access) | **Mohammad Bustami** | **Saif Asender** | [`card_03_rule_100201.md`](detections/cards/card_03_rule_100201.md) |
+| **`100013`** | LOLBin File Download (`certutil`/`bitsadmin`/`mshta`) | `T1105` (C2) | **Saif Asender** | **Mohammad Bustami** | [`card_04_rule_100013.md`](detections/cards/card_04_rule_100013.md) |
+| **`100203`** | Linux Cron Job Modification (`/usr/bin/crontab`) | `T1053.003` (Persistence) | **Saif Asender** | **Mohammad Alodeh** | [`card_05_rule_100203.md`](detections/cards/card_05_rule_100203.md) |
+| **`100202`** | Linux SSH `authorized_keys` Modification | `T1098.004` (Persistence) | **Saif Asender** | **Mohammad Bustami** | [`card_06_rule_100202.md`](detections/cards/card_06_rule_100202.md) |
+| **`100204`** | Remote Desktop (RDP Logon Type 10) from Non-Local IP | `T1021.001` (Lateral Mvmt) | **Mohammad Alodeh** | **Mohammad Bustami** | [`card_07_rule_100204.md`](detections/cards/card_07_rule_100204.md) |
+| **`100205`** | Suspicious `rundll32.exe` Proxy Execution | `T1218.011` (Stealth `TA0005`) | **Mohammad Alodeh** | **Saif Asender** | [`card_08_rule_100205.md`](detections/cards/card_08_rule_100205.md) |
+| **`100206`** | Registry `Run` / `RunOnce` Value Set (`SetValue`) | `T1547.001` (Persistence) | **Mohammad Alodeh** | **Mohammad Bustami** | [`card_09_rule_100206.md`](detections/cards/card_09_rule_100206.md) |
+| **`100207`** | Windows Security (`1102`) or System (`104`) Log Cleared | `T1685.005` (Defense Impair) | **Mohammad Bustami** | **Mohammad Alodeh** | [`card_10_rule_100207.md`](detections/cards/card_10_rule_100207.md) |
 
 ---
 
-## 2. Triage, Incident Simulation & Part 2 Ownership (Sub-tasks 1.5, 1.6 & Part 2)
+## 2. Part 2 Incident Readiness Pack Ownership (Sub-tasks 2.1 – 2.8)
 
-Strictly enforces the Sub-task 1.5 separation of duties (Incident A Red-Team Attacker, Incident A Lead Blue-Team Analyst, and Incident B False-Positive Lead Analyst are three distinct team members, and every member triaged at least one ticket):
+*Requirement: Every student owns 1+ Part 2 task.*  
+**Delivered: Every squad member owns dedicated Part 2 tasks as primary author:**
 
-| Deliverable / Role | Lead Owner | Supporting / Peer Reviewer | File Path |
-| :--- | :--- | :--- | :--- |
-| **3-VM Lab Build & Log Pipeline (1.1)** | **Mohammad Bustami** & **Saif Asender** | **Mohammad Alodeh** | [`evidence/PIPELINE_PROOF.md`](evidence/PIPELINE_PROOF.md) |
-| **Incident A Red-Team Attacker (1.5)** | **Saif Asender** | — | Executed multi-stage chain on `Win10` (`192.168.99.30`) |
-| **Incident A Lead Blue-Team Triage & Report (1.5 & 1.6)** | **Mohammad Bustami** | **Mohammad Alodeh** | [`triage/ticket_01_incident_a.md`](triage/ticket_01_incident_a.md) & [`triage/INCIDENT_A_REPORT.md`](triage/INCIDENT_A_REPORT.md) |
-| **Incident B False-Positive Triage & Rule Tuning (1.3 & 1.5)** | **Mohammad Alodeh** | **Mohammad Bustami** | [`triage/ticket_02_incident_b_fp.md`](triage/ticket_02_incident_b_fp.md) & [`detections/tuning/TUNING_REPORT.md`](detections/tuning/TUNING_REPORT.md) |
-| **Ticket #3 (Linux SSH & Cron Persistence)** | **Mohammad Alodeh** | **Saif Asender** | [`triage/ticket_03_linux_ssh_persistence.md`](triage/ticket_03_linux_ssh_persistence.md) |
-| **Ticket #4 (Defense Impairment — Event Log Cleared)** | **Saif Asender** | **Mohammad Bustami** | [`triage/ticket_04_defense_impairment.md`](triage/ticket_04_defense_impairment.md) |
-| **Part 2 Readiness Pack (`2.1`–`2.4`)** | **Mohammad Bustami** & **Saif Asender** | **Mohammad Alodeh** | `readiness/01_*` .. `04_*` |
-| **Part 2 Readiness Pack (`2.5`–`2.8`)** | **Mohammad Alodeh** & **Mohammad Bustami** | **Saif Asender** | `readiness/05_*` .. `08_*` |
+| Sub-task | Deliverable Description | Primary Author (Owner) | Reviewer / Contributor | File Link |
+| :--- | :--- | :--- | :--- | :--- |
+| **2.1** | **Organisation Profile & 12-Row Risk Register** (Medira Health Systems, MTD/RTO/RPO limits, Top 3 risk deep dive) | **Mohammad Bustami** | Saif Asender | [`01_org_profile_and_risk_register.md`](readiness/01_org_profile_and_risk_register.md) |
+| **2.2** | **Severity Classification Matrix & Card Alignment** (P1–P4 org matrix, 12 concrete examples, SLAs, 5 updated cards) | **Mohammad Alodeh** | Mohammad Bustami | [`02_severity_classification_matrix.md`](readiness/02_severity_classification_matrix.md) |
+| **2.3** | **Escalation Tree & National Reporting** (Call order, 10-min fallback policy, 24/7 roster, SDAIA <=72h & NCA <=24h) | **Saif Asender** | Mohammad Alodeh | [`03_escalation_tree_and_contacts.md`](readiness/03_escalation_tree_and_contacts.md) |
+| **2.4** | **Playbook PB-01** (LSASS Memory Access, Ransomware Staging, Log Clearing) | **Mohammad Bustami** | Mohammad Alodeh | [`04_ir_playbooks.md`](readiness/04_ir_playbooks.md) |
+| **2.4** | **Playbook PB-02** (Account Takeover, Brute Force & External RDP) | **Mohammad Alodeh** | Saif Asender | [`04_ir_playbooks.md`](readiness/04_ir_playbooks.md) |
+| **2.4** | **Playbook PB-03** (Linux SSH Authorized Keys & Rogue Cron Persistence) | **Saif Asender** | Mohammad Bustami | [`04_ir_playbooks.md`](readiness/04_ir_playbooks.md) |
+| **2.5** | **Playbook Testing & Cold Test Log** (Internal timed runs, 5 friction points fixed, External Student Cold Test) | **Mohammad Alodeh** | Saif Asender | [`05_playbook_testing_sheet.md`](readiness/05_playbook_testing_sheet.md) |
+| **2.6** | **Crisis Communication Plan** (Spokesperson/approval matrix + 5 ready-to-send audience templates) | **Mohammad Alodeh** | Saif Asender | [`06_communication_plan.md`](readiness/06_communication_plan.md) |
+| **2.7** | **Tabletop Exercise Package** ("Operation Silent Ward" 45-min TTX, 6 injects incl. pressure inject, Observer log) | **Saif Asender** | M. Bustami & M. Alodeh | [`07_tabletop_exercise_package.md`](readiness/07_tabletop_exercise_package.md) |
+| **2.8** | **Board Executive Briefing** (1-page C-suite memo, top 3 risks, 10-slide outline, IBM $9.77M / DBIR cost of inaction) | **Mohammad Bustami** & **Mohammad Alodeh** | Saif Asender | [`08_executive_briefing.md`](readiness/08_executive_briefing.md) |
+
+---
+
+## 3. Separation of Duties in Incident Triage (Sub-tasks 1.5 & 1.6)
+
+*Requirement: Incident A attacked by one member (who does not triage it); others triage, ticket, escalate, contain, and hash evidence. Incident B closed as FP with tuning suggestion. Queue of 4+ alerts; every member writes 1+ ticket.*
+
+| Ticket ID | Incident Type | Assigned Blue-Team Analyst | Red-Team Attacker / Source | Peer Reviewer | File Link |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **`SOC-2026-INC-A01`** | **Incident A** (P1 Critical True-Positive Chain) | **Mohammad Bustami** | **Saif Asender** *(Attacked; did not triage)* | Mohammad Alodeh | [`ticket_01_incident_a.md`](triage/ticket_01_incident_a.md) |
+| **`SOC-2026-INC-B02`** | **Incident B** (P4 Informational False Positive) | **Mohammad Alodeh** | System Baseline (`0x1000` query on `lsass.exe`) | Mohammad Bustami | [`ticket_02_incident_b_fp.md`](triage/ticket_02_incident_b_fp.md) |
+| **`SOC-2026-INC-C03`** | **Ticket #3** (P2 High Linux SSH & Cron TP) | **Mohammad Alodeh** | Saif Asender | Saif Asender | [`ticket_03_linux_ssh_persistence.md`](triage/ticket_03_linux_ssh_persistence.md) |
+| **`SOC-2026-INC-D04`** | **Ticket #4** (P1 Critical Event Log Cleared TP) | **Saif Asender** | `wevtutil.exe cl Security` | Mohammad Bustami | [`ticket_04_defense_impairment.md`](triage/ticket_04_defense_impairment.md) |

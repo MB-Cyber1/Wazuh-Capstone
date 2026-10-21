@@ -44,6 +44,15 @@ Wazuh agent_control. List of available agents:
 
 ## 3. Pipeline Proof Across All Three Required Log Sources
 
+### Test Action Per Host & Ingestion Latency Summary (Sub-task 1.1)
+
+| Monitored Endpoint / Host | Ingestion Technology | Test Action Executed | Endpoint Event Timestamp | Wazuh Manager Ingestion Timestamp | Measured Ingestion Delay | SIEM Verification Screenshot |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **`Win10`** (`192.168.99.30`, Agent `002`) | Windows `EventChannel` (Sysmon v15.15) | Encoded PowerShell trigger (`powershell.exe -NoProfile -enc dwBo...`) | `2026-10-19T18:43:30.180Z` | `2026-10-19T18:43:30.754Z` | **`0.57 seconds`** | [`ActiveEndpoint-WAZUH.png`](Screenshots/ActiveEndpoint-WAZUH.png)<br/>[`Discover-WAZUH.png`](Screenshots/Discover-WAZUH.png) |
+| **`ubuntu-01`** (`192.168.99.40`, Agent `001`) | Linux `auditd` (`/var/log/audit/audit.log`) | SSH key file write test (`truncate -s0 /home/kali/.ssh/authorized_keys`) | `2026-10-19T17:57:35.318Z` | `2026-10-19T17:57:36.152Z` | **`0.83 seconds`** | [`ActiveEndpoint-WAZUH.png`](Screenshots/ActiveEndpoint-WAZUH.png)<br/>[`Discover-WAZUH.png`](Screenshots/Discover-WAZUH.png) |
+| **`ubuntu-01`** (`192.168.99.40`, Agent `001`) | Web Server (`/var/log/nginx/access.log`) | HTTP GET trigger (`curl -s -o /dev/null http://127.0.0.1/`) | `2026-10-19T18:05:12.110Z` | `2026-10-19T18:05:12.560Z` | **`0.45 seconds`** | [`Discover-WAZUH.png`](Screenshots/Discover-WAZUH.png) |
+
+
 ### Source 1: Windows Endpoint (`Win10` — `192.168.99.30`) — Windows Event Logs + Sysmon (`SwiftOnSecurity` + LSASS Event 10)
 - **Event Generation Timestamp (`win.eventdata.utcTime` / `systemTime`)**: `2026-10-19T18:43:30.180Z`
 - **Wazuh Ingestion Timestamp (`timestamp`)**: `2026-10-19T18:43:30.754+0000`
