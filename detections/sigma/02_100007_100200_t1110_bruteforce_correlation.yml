@@ -1,0 +1,29 @@
+title: Windows Logon Failure Followed by Success Brute Force Correlation (SOC-100007 / SOC-100200)
+id: 6d4f8a10-1200-4b19-9a02-000000100200
+status: stable
+description: Detects a failed Windows logon (Event 4625) brute-force burst (5 failures in 2 minutes, Rule 100007) followed by a successful logon (Event 4624, Rule 100200) for the same TargetUserName within 5 minutes.
+references:
+  - https://attack.mitre.org/techniques/T1110/
+author: SOC Capstone Team
+date: 2026-10-19
+tags:
+  - attack.credential-access
+  - attack.t1110
+logsource:
+  product: windows
+  service: security
+detection:
+  failed_logon:
+    EventID: 4625
+  successful_logon:
+    EventID: 4624
+  condition: failed_logon or successful_logon
+  # Note: Sigma correlation rule specification (v2 temporal_ordered):
+  # correlation:
+  #   type: temporal_ordered
+  #   rules: [failed_logon_burst, successful_logon]
+  #   group-by: [TargetUserName]
+  #   timespan: 5m
+falsepositives:
+  - User who forgot their password multiple times at the lock screen before typing it correctly
+level: critical

@@ -1,0 +1,190 @@
+<!--
+  SOC Analyst Capstone - Part 1 Detection Rule Pack (10 Rules + Correlation)
+  SIEM: Wazuh 4.x (Docker single-node)
+  MITRE ATT&CK Enterprise v19 (April 2026)
+    - Note on ATT&CK v19: Legacy "Defense Evasion" split into Stealth (TA0005)
+      and Defense Impairment (TA0112). Rule 100205 maps to Stealth (T1218.011);
+      Rule 100207 maps to Defense Impairment (T1685.005).
+-->
+
+<group name="local,soc_capstone,">
+
+  <!-- =========================================================================
+       Rule 1: 100005 - T1059.001 PowerShell Execution (Encoded / Download Cradle)
+       Tactic: Execution (TA0002) | Host: Win10 | Log source: Sysmon Event 1
+       Trigger: powershell -enc dwBoAG8AYQBtAGkA
+       ========================================================================= -->
+  <rule id="100005" level="10">
+    <if_sid>61603,92004,92005,92021,92027,92028,92029,92052,92057,92065,92066,92070,92071</if_sid>
+    <field name="win.eventdata.image" type="pcre2">(?i)\\+(powershell|pwsh)\.exe$</field>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)(\s-[eE][nN][cC]\b|\s-[eE]ncoded[cC]ommand\b|FromBase64String|DownloadString|DownloadFile|Invoke-WebRequest|Invoke-RestMethod|\biwr\b|\birm\b|\biex\b|Invoke-Expression)</field>
+    <description>SOC-100005 [T1059.001]: Suspicious PowerShell execution with encoded command or download cradle ($(win.eventdata.commandLine))</description>
+    <mitre>
+      <id>T1059.001</id>
+    </mitre>
+    <group>execution,powershell,</group>
+  </rule>
+
+  <!-- =========================================================================
+       Rule 2a: 100007 - T1110 Brute Force (5 failed logons for one user in 2 min)
+       Tactic: Credential Access (TA0006) | Host: Win10, DC01 | Log: Security 4625
+       ========================================================================= -->
+  <rule id="100007" level="10" frequency="5" timeframe="120">
+    <if_matched_sid>60122</if_matched_sid>
+    <same_field>win.eventdata.targetUserName</same_field>
+    <description>SOC-100007 [T1110]: Brute force detected - 5 failed logons (Event 4625) for user $(win.eventdata.targetUserName) within 2 minutes</description>
+    <mitre>
+      <id>T1110</id>
+    </mitre>
+    <group>authentication_failures,credential_access,</group>
+  </rule>
+
+  <!-- =========================================================================
+       Rule 7: 100204 - T1021.001 RDP Lateral Movement (Logon Type 10)
+       Tactic: Lateral Movement (TA0008) | Host: Win10 | Log: Security 4624
+       Trigger: RDP into Win10 from another host
+       ========================================================================= -->
+  <rule id="100204" level="8">
+    <if_sid>60106,60118,60119,67022,92651,92652,92653,92656,92657</if_sid>
+    <field name="win.system.eventID">^4624$</field>
+    <field name="win.eventdata.logonType">^10$</field>
+    <field name="win.eventdata.ipAddress" type="pcre2">^(?!127\.0\.0\.1$|::1$|-$).+</field>
+    <description>SOC-100204 [T1021.001]: Remote Desktop (Logon Type 10) into $(win.system.computer) by $(win.eventdata.targetUserName) from $(win.eventdata.ipAddress)</description>
+    <mitre>
+      <id>T1021.001</id>
+    </mitre>
+    <group>lateral_movement,authentication_success,</group>
+  </rule>
+
+  <!-- =========================================================================
+       Rule 2b (CORRELATION): 100200 - T1110 Brute Force Followed by Logon Success
+       Tactic: Credential Access (TA0006) | Host: Win10, DC01 | Log: 4625 -> 4624
+       Trigger: 5 wrong passwords, then the right one for the same user within 5m
+       ========================================================================= -->
+  <rule id="100200" level="13" timeframe="300">
+    <if_sid>60106,60118,60119,67022,92651,92652,92653,92656,92657,100204</if_sid>
+    <if_matched_sid>100007</if_matched_sid>
+    <same_field>win.eventdata.targetUserName</same_field>
+    <description>SOC-100200 [T1110 CORRELATION]: Successful logon (Event 4624) for $(win.eventdata.targetUserName) within 5 minutes of brute-force alert (100007)</description>
+    <mitre>
+      <id>T1110</id>
+      <id>T1078</id>
+    </mitre>
+    <group>credential_access,correlation,compromised_account,</group>
+  </rule>
+
+  <!-- =========================================================================
+       Rule 3: 100201 - T1003.001 LSASS Memory Access (Credential Dumping)
+       Tactic: Credential Access (TA0006) | Host: Win10 | Log: Sysmon Event 10
+       Trigger: Task Manager -> lsass.exe -> Create dump file (or comsvcs MiniDump)
+       ========================================================================= -->
+  <rule id="100201" level="14">
+    <if_group>sysmon_event_10</if_group>
+    <field name="win.eventdata.targetImage" type="pcre2">(?i)\\+lsass\.exe$</field>
+    <field name="win.eventdata.grantedAccess" type="pcre2">(?i)^(0x1000|0x1010|0x1410|0x1438|0x143a|0x1fffff|0x1f0fff|0x1f1fff|0x1f2fff|0x1f3fff|0x0010|0x0040)$</field>
+    <field name="win.eventdata.sourceImage" type="pcre2">^(?!(?i)C:\\+Windows\\+System32\\+(svchost|csrss|wininit|services|lsass|CompatTelRunner|taskhostw|conhost|WerFault|wbem\\+wmiprvse)\.exe$|C:\\+(ProgramData|Program Files)\\+(Microsoft\\+)?Windows Defender\\+.*\\+MsMpEng\.exe$).+</field>
+    <description>SOC-100201 [T1003.001]: Process $(win.eventdata.sourceImage) accessed lsass.exe memory with rights $(win.eventdata.grantedAccess)</description>
+    <mitre>
+      <id>T1003.001</id>
+    </mitre>
+    <group>credential_access,lsass_dump,</group>
+  </rule>
+
+  <!-- =========================================================================
+       Rule 4: 100013 - T1105 Ingress Tool Transfer (certutil / LOLBin download)
+       Tactic: Command and Control (TA0011) | Host: Win10 | Log: Sysmon Event 1
+       Trigger: certutil -urlcache -f http://192.168.99.40/a.txt C:\Temp\a.txt
+       ========================================================================= -->
+  <rule id="100013" level="10">
+    <if_sid>61603,92016,92017,92018,92052,92066,92072,92073,92074,92075</if_sid>
+    <field name="win.eventdata.image" type="pcre2">(?i)\\+(certutil|bitsadmin|mshta|regsvr32)\.exe$</field>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)(-urlcache|-verifyctl|/transfer|https?://|scrobj\.dll)</field>
+    <description>SOC-100013 [T1105]: LOLBin file download detected via $(win.eventdata.image) ($(win.eventdata.commandLine))</description>
+    <mitre>
+      <id>T1105</id>
+    </mitre>
+    <group>command_and_control,lolbin_download,</group>
+  </rule>
+
+  <!-- =========================================================================
+       Rule 5: 100203 - T1053.003 Cron Job Persistence on Linux
+       Tactic: Persistence (TA0003) | Host: ubuntu-01 | Log: auditd EXECVE
+       Trigger: echo "* * * * * echo hi" | crontab -
+       ========================================================================= -->
+  <rule id="100203" level="8">
+    <if_sid>80700,80780,80781,80784,80790,80791,80792</if_sid>
+    <field name="audit.exe">^/usr/bin/crontab$</field>
+    <field name="audit.syscall">^59$</field>
+    <field name="audit.success">^yes$</field>
+    <description>SOC-100203 [T1053.003]: Linux crontab command executed by uid=$(audit.uid) (auid=$(audit.auid)) to edit or replace scheduled jobs</description>
+    <mitre>
+      <id>T1053.003</id>
+    </mitre>
+    <group>persistence,linux_cron,</group>
+  </rule>
+
+  <!-- =========================================================================
+       Rule 6: 100202 - T1098.004 SSH Authorized Keys Modification on Linux
+       Tactic: Persistence (TA0003) | Host: ubuntu-01 | Log: auditd file watch
+       Trigger: echo "ssh-rsa AAAA test" >> /home/kali/.ssh/authorized_keys
+       ========================================================================= -->
+  <rule id="100202" level="10">
+    <if_sid>80700,80780,80781,80784,80790,80791,80792</if_sid>
+    <field name="audit.key">^ssh_authorized_keys$|^ssh$</field>
+    <field name="audit.file.name" type="pcre2">authorized_keys$</field>
+    <field name="audit.exe" type="pcre2">^(?!/usr/sbin/sshd$).+</field>
+    <description>SOC-100202 [T1098.004]: Write to SSH authorized_keys ($(audit.file.name)) by process $(audit.exe) (uid=$(audit.uid))</description>
+    <mitre>
+      <id>T1098.004</id>
+    </mitre>
+    <group>persistence,ssh_authorized_keys,</group>
+  </rule>
+
+  <!-- =========================================================================
+       Rule 8: 100205 - T1218.011 System Binary Proxy Execution: Rundll32
+       Tactic: Stealth (TA0005, ATT&CK v19) | Host: Win10 | Log: Sysmon Event 1
+       Trigger: rundll32 url.dll,FileProtocolHandler calc.exe
+       ========================================================================= -->
+  <rule id="100205" level="9">
+    <if_sid>61603,92046,92052,92066,92076,92079</if_sid>
+    <field name="win.eventdata.image" type="pcre2">(?i)\\+rundll32\.exe$</field>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)(url\.dll|FileProtocolHandler|javascript:|vbscript:|mshtml|scrobj\.dll|comsvcs\.dll|MiniDump|\\+Users\\+|\\+Temp\\+|\\+AppData\\+|\\+ProgramData\\+)</field>
+    <description>SOC-100205 [T1218.011]: Suspicious rundll32 proxy execution ($(win.eventdata.commandLine))</description>
+    <mitre>
+      <id>T1218.011</id>
+    </mitre>
+    <group>stealth,rundll32_proxy,</group>
+  </rule>
+
+  <!-- =========================================================================
+       Rule 9: 100206 - T1547.001 Registry Run / RunOnce Key Persistence
+       Tactic: Persistence (TA0003) | Host: Win10 | Log: Sysmon Event 13
+       Trigger: reg add HKCU\Software\Microsoft\Windows\CurrentVersion\Run /v T /d calc.exe
+       ========================================================================= -->
+  <rule id="100206" level="9">
+    <if_sid>61615,92300,92301,92302,92303,92304,92305,92306</if_sid>
+    <field name="win.eventdata.eventType">^SetValue$</field>
+    <field name="win.eventdata.targetObject" type="pcre2">(?i)\\+Software\\+Microsoft\\+Windows\\+CurrentVersion\\+(Run|RunOnce)\\+</field>
+    <description>SOC-100206 [T1547.001]: Registry Run/RunOnce persistence value set at $(win.eventdata.targetObject) -> $(win.eventdata.details) by $(win.eventdata.image)</description>
+    <mitre>
+      <id>T1547.001</id>
+    </mitre>
+    <group>persistence,registry_run_key,</group>
+  </rule>
+
+  <!-- =========================================================================
+       Rule 10: 100207 - T1685.005 Windows Event Log Cleared (1102 / 104)
+       Tactic: Defense Impairment (TA0112, ATT&CK v19) | Host: Win10
+       Trigger: wevtutil cl Security
+       ========================================================================= -->
+  <rule id="100207" level="12">
+    <if_sid>60117,60000,60001,60002,60100,60103,61100,63103,63104</if_sid>
+    <field name="win.system.eventID">^1102$|^104$</field>
+    <description>SOC-100207 [T1685.005]: Windows Event Log ($(win.system.channel)) cleared (Event $(win.system.eventID)) on $(win.system.computer)</description>
+    <mitre>
+      <id>T1685</id>
+    </mitre>
+    <group>defense_impairment,logs_cleared,</group>
+  </rule>
+
+</group>

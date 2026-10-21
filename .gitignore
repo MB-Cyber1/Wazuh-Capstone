@@ -1,0 +1,9 @@
+isos/
+*.iso
+*.vmdk
+*.vmem
+*.vmsd
+*.vmss
+*.nvram
+__pycache__/
+*.pyc

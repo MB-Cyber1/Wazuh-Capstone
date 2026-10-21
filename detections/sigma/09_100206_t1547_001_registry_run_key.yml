@@ -1,0 +1,25 @@
+title: Registry Run or RunOnce Persistence Key Modification (SOC-100206)
+id: 6d4f8a10-1206-4b19-9a09-000000100206
+status: stable
+description: Detects registry value creation/modification (Sysmon Event ID 13 SetValue) under CurrentVersion\Run or CurrentVersion\RunOnce.
+references:
+  - https://attack.mitre.org/techniques/T1547/001/
+  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/registry/registry_set/registry_set_asep_reg_keys_modification_currentversion.yml
+author: Mohammad Alodeh (Adapted from SigmaHQ)
+date: 2026-10-19
+tags:
+  - attack.persistence
+  - attack.t1547.001
+logsource:
+  category: registry_set
+  product: windows
+detection:
+  selection:
+    EventType: 'SetValue'
+    TargetObject|contains:
+      - '\Software\Microsoft\Windows\CurrentVersion\Run\'
+      - '\Software\Microsoft\Windows\CurrentVersion\RunOnce\'
+  condition: selection
+falsepositives:
+  - Legitimate user-mode software updaters (e.g., OneDrive, Microsoft Edge Update, Teams)
+level: medium

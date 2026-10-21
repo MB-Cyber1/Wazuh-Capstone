@@ -1,0 +1,24 @@
+title: Linux Scheduled Task Persistence via Crontab Execution (SOC-100203)
+id: 6d4f8a10-1203-4b19-9a05-000000100203
+status: stable
+description: Detects execution of /usr/bin/crontab via Linux auditd SYSCALL/EXECVE records to install or replace scheduled cron jobs.
+references:
+  - https://attack.mitre.org/techniques/T1053/003/
+author: SOC Capstone Team
+date: 2026-10-19
+tags:
+  - attack.persistence
+  - attack.t1053.003
+logsource:
+  product: linux
+  service: auditd
+detection:
+  selection:
+    type: 'SYSCALL'
+    exe: '/usr/bin/crontab'
+    syscall: 59
+    success: 'yes'
+  condition: selection
+falsepositives:
+  - Scheduled system maintenance by authorized Linux administrators
+level: medium

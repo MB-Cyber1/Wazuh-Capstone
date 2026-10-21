@@ -1,0 +1,36 @@
+title: Suspicious System Binary Proxy Execution via Rundll32 (SOC-100205)
+id: 6d4f8a10-1205-4b19-9a08-000000100205
+status: stable
+description: Detects rundll32.exe invoking url.dll FileProtocolHandler, script engines, comsvcs.dll MiniDump, or DLLs from user-writable directories. Maps to ATT&CK v19 Stealth tactic (TA0005).
+references:
+  - https://attack.mitre.org/techniques/T1218/011/
+  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_rundll32_ suspicious_activity.yml
+author: Mohammad Alodeh (Adapted from SigmaHQ)
+date: 2026-10-19
+tags:
+  - attack.stealth
+  - attack.t1218.011
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_img:
+    Image|endswith: '\rundll32.exe'
+  selection_cli:
+    CommandLine|contains:
+      - 'url.dll'
+      - 'FileProtocolHandler'
+      - 'javascript:'
+      - 'vbscript:'
+      - 'mshtml'
+      - 'scrobj.dll'
+      - 'comsvcs.dll'
+      - 'MiniDump'
+      - '\Users\'
+      - '\Temp\'
+      - '\AppData\'
+      - '\ProgramData\'
+  condition: selection_img and selection_cli
+falsepositives:
+  - Legacy software installers or shell URL handlers launching browser links
+level: medium

@@ -1,0 +1,26 @@
+title: Linux Persistence via SSH Authorized Keys Modification (SOC-100202)
+id: 6d4f8a10-1202-4b19-9a06-000000100202
+status: stable
+description: Detects writes or modifications to SSH authorized_keys files monitored by auditd file watches.
+references:
+  - https://attack.mitre.org/techniques/T1098/004/
+author: SOC Capstone Team
+date: 2026-10-19
+tags:
+  - attack.persistence
+  - attack.t1098.004
+logsource:
+  product: linux
+  service: auditd
+detection:
+  selection:
+    key:
+      - 'ssh_authorized_keys'
+      - 'ssh'
+    name|endswith: 'authorized_keys'
+  filter_sshd:
+    exe: '/usr/sbin/sshd'
+  condition: selection and not filter_sshd
+falsepositives:
+  - Authorized administrator provisioning a new SSH key
+level: high

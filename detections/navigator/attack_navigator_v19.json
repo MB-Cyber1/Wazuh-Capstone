@@ -1,0 +1,92 @@
+{
+  "name": "SOC Capstone Team - Part 1 Detection Coverage (ATT&CK v19)",
+  "versions": {
+    "attack": "19",
+    "navigator": "5.1.0",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "10 tested Wazuh detection rules across 6 tactics (Execution, Persistence, Credential Access, Stealth, Defense Impairment, Lateral Movement, Command and Control), including 2 Linux rules and 1 temporal correlation rule.",
+  "techniques": [
+    {
+      "techniqueID": "T1059.001",
+      "tactic": "execution",
+      "score": 100,
+      "color": "#2ecc71",
+      "comment": "Rule 100005 (Level 10): PowerShell encoded/download cradle via Sysmon Event 1",
+      "enabled": true
+    },
+    {
+      "techniqueID": "T1110",
+      "tactic": "credential-access",
+      "score": 100,
+      "color": "#2ecc71",
+      "comment": "Rule 100007 + 100200 Correlation (Level 10/13): 5 failed logons (4625) -> success (4624)",
+      "enabled": true
+    },
+    {
+      "techniqueID": "T1003.001",
+      "tactic": "credential-access",
+      "score": 100,
+      "color": "#2ecc71",
+      "comment": "Rule 100201 (Level 14): LSASS memory read via Sysmon Event 10",
+      "enabled": true
+    },
+    {
+      "techniqueID": "T1105",
+      "tactic": "command-and-control",
+      "score": 100,
+      "color": "#2ecc71",
+      "comment": "Rule 100013 (Level 10): LOLBin download (certutil/bitsadmin/mshta/regsvr32)",
+      "enabled": true
+    },
+    {
+      "techniqueID": "T1053.003",
+      "tactic": "persistence",
+      "score": 100,
+      "color": "#2ecc71",
+      "comment": "Rule 100203 (Level 8): Linux crontab execution via auditd SYSCALL/EXECVE",
+      "enabled": true
+    },
+    {
+      "techniqueID": "T1098.004",
+      "tactic": "persistence",
+      "score": 100,
+      "color": "#2ecc71",
+      "comment": "Rule 100202 (Level 10): Linux SSH authorized_keys write via auditd file watch",
+      "enabled": true
+    },
+    {
+      "techniqueID": "T1021.001",
+      "tactic": "lateral-movement",
+      "score": 100,
+      "color": "#2ecc71",
+      "comment": "Rule 100204 (Level 8): RDP Logon Type 10 from non-local IP (Event 4624)",
+      "enabled": true
+    },
+    {
+      "techniqueID": "T1218.011",
+      "tactic": "stealth",
+      "score": 100,
+      "color": "#2ecc71",
+      "comment": "Rule 100205 (Level 9): Suspicious rundll32 proxy execution (ATT&CK v19 Stealth TA0005)",
+      "enabled": true
+    },
+    {
+      "techniqueID": "T1547.001",
+      "tactic": "persistence",
+      "score": 100,
+      "color": "#2ecc71",
+      "comment": "Rule 100206 (Level 9): Registry Run/RunOnce SetValue via Sysmon Event 13",
+      "enabled": true
+    },
+    {
+      "techniqueID": "T1685.005",
+      "tactic": "defense-impairment",
+      "score": 100,
+      "color": "#2ecc71",
+      "comment": "Rule 100207 (Level 12): Windows Security (1102) / System (104) log cleared (ATT&CK v19 Defense Impairment TA0112)",
+      "enabled": true
+    }
+  ]
+}

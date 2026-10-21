@@ -1,0 +1,35 @@
+title: Suspicious PowerShell Encoded Command or Download Cradle (SOC-100005)
+id: 6d4f8a10-1005-4b19-9a01-000000100005
+status: stable
+description: Detects PowerShell or pwsh execution with encoded commands (-enc/-EncodedCommand), Base64 decoding, or web download cradles.
+references:
+  - https://attack.mitre.org/techniques/T1059/001/
+  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_powershell_base64_encoded_cmd.yml
+author: Mohammad Bustami (Adapted from SigmaHQ)
+date: 2026-10-19
+tags:
+  - attack.execution
+  - attack.t1059.001
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_img:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+  selection_cli:
+    CommandLine|contains:
+      - ' -enc '
+      - ' -EncodedCommand '
+      - 'FromBase64String'
+      - 'DownloadString'
+      - 'DownloadFile'
+      - 'Invoke-WebRequest'
+      - 'Invoke-RestMethod'
+      - 'Invoke-Expression'
+      - 'iex '
+  condition: selection_img and selection_cli
+falsepositives:
+  - Legitimate administrative deployment or SCCM/Intune scripts using Base64 parameters
+level: high

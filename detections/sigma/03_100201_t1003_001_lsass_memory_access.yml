@@ -1,0 +1,45 @@
+title: Credential Dumping via LSASS Process Memory Access (SOC-100201)
+id: 6d4f8a10-1201-4b19-9a03-000000100201
+status: stable
+description: Detects non-system processes opening lsass.exe with memory-read or dump permissions (Sysmon Event ID 10), indicative of credential dumping (Task Manager dump, comsvcs.dll MiniDump, Procdump, or Mimikatz).
+references:
+  - https://attack.mitre.org/techniques/T1003/001/
+  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_access/proc_access_win_lsass_memdump.yml
+author: Mohammad Bustami (Adapted from SigmaHQ)
+date: 2026-10-19
+tags:
+  - attack.credential-access
+  - attack.t1003.001
+logsource:
+  category: process_access
+  product: windows
+detection:
+  selection:
+    TargetImage|endswith: '\lsass.exe'
+    GrantedAccess|contains:
+      - '0x1010'
+      - '0x1410'
+      - '0x1438'
+      - '0x143a'
+      - '0x1fffff'
+      - '0x1f0fff'
+      - '0x1f1fff'
+      - '0x1f2fff'
+      - '0x1f3fff'
+      - '0x1000'
+      - '0x0040'
+  filter_system:
+    SourceImage:
+      - 'C:\Windows\System32\svchost.exe'
+      - 'C:\Windows\System32\csrss.exe'
+      - 'C:\Windows\System32\wininit.exe'
+      - 'C:\Windows\System32\services.exe'
+      - 'C:\Windows\System32\lsass.exe'
+      - 'C:\Windows\System32\wbem\wmiprvse.exe'
+  filter_defender:
+    SourceImage|startswith: 'C:\ProgramData\Microsoft\Windows Defender\Platform\'
+    SourceImage|endswith: '\MsMpEng.exe'
+  condition: selection and not 1 of filter_*
+falsepositives:
+  - Third-party EDR or antivirus agents not yet added to the exclusion filter
+level: critical
