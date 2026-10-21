@@ -36,6 +36,10 @@ Wazuh agent_control. List of available agents:
 | `ubuntu-01` | `192.168.99.40` | Ubuntu 24.04 LTS (Linux Server + Web Server) | `001` | `Active` | `/var/log/audit/audit.log` (`auditd`), `/var/log/auth.log`, `/var/log/syslog`, `/var/log/nginx/access.log`, `/var/log/nginx/error.log` |
 | `Win10` | `192.168.99.30` | Windows 11 Enterprise Eval (Workstation) | `002` | `Active` | `Security`, `System`, `Application`, `Microsoft-Windows-Sysmon/Operational`, `Microsoft-Windows-PowerShell/Operational` |
 
+![Active Endpoints in Wazuh Dashboard](Screenshots/ActiveEndpoint-WAZUH.png)
+
+![Wazuh Discover Telemetry Stream](Screenshots/Discover-WAZUH.png)
+
 ---
 
 ## 3. Pipeline Proof Across All Three Required Log Sources

@@ -16,7 +16,15 @@ All **10 custom detection rules** (plus correlation rule `100200` = **11 total r
 | `100204` | `T1021.001` | `Win10` | `8` | `2026-10-19T18:54:54.754+0000` | `1792436094.12267612` | SOC-100204 [T1021.001]: Remote Desktop (Logon Type 10) into Win10 by soc from 192.168.99.1 |
 | `100205` | `T1218.011` | `Win10` | `9` | `2026-10-19T18:43:33.350+0000` | `1792435413.10313232` | SOC-100205 [T1218.011]: Suspicious rundll32 proxy execution (\"C:\\WINDOWS\\system32\\rundll32.exe\" url.dll,FileProtocolHandler calc.exe) |
 | `100206` | `T1547.001` | `Win10` | `9` | `2026-10-19T18:43:34.422+0000` | `1792435414.10413649` | SOC-100206 [T1547.001]: Registry Run/RunOnce persistence value set at HKU\\S-1-5-21-2093812193-1135278953-2291312261-1000\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\T -> calc.exe by C:\\WINDOWS\\system32\\reg.exe |
-| `100207` | `` | `Win10` | `12` | `2026-10-19T18:52:16.445+0000` | `1792435936.11665474` | SOC-100207 [T1685.005]: Windows Event Log (Security) cleared (Event 1102) on Win10 |
+| `100207` | `T1685.005` | `Win10` | `12` | `2026-10-19T18:52:16.445+0000` | `1792435936.11665474` | SOC-100207 [T1685.005]: Windows Event Log (Security) cleared (Event 1102) on Win10 |
+
+### Live Wazuh SIEM Screenshots (`evidence/Screenshots/`)
+
+![Threat Hunting Overview Dashboard](Screenshots/ThreatHunt-WAZUH.png)
+
+![Threat Hunting Events Stream](Screenshots/Events-WAZUH.png)
+
+![MITRE ATT&CK Dashboard](Screenshots/MITRE%20ATT%26CK-WAZUH.png)
 
 ---
 

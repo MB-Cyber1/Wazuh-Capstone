@@ -48,3 +48,15 @@
 | **2.6 Crisis Communication Plan** | **3 pts** | - [`readiness/06_communication_plan.md`](readiness/06_communication_plan.md) (Matrix + 5 ready-to-send templates: Executive, Staff, Regulator, Customers/Patients, Media) |
 | **2.7 Tabletop Exercise (TTX) Package** | **7 pts** | - [`readiness/07_tabletop_exercise_package.md`](readiness/07_tabletop_exercise_package.md) ("Operation Silent Ward" 45-min TTX, 6 timed injects, AAR + Observer Log Sheet) |
 | **2.8 Board Executive Briefing** | **5 pts** | - [`readiness/08_executive_briefing.md`](readiness/08_executive_briefing.md) (Executive metrics, top 3 residual risks, 30/60/90-day roadmap, cited IBM/DBIR cost of inaction, 10-slide outline) |
+
+
+---
+
+## 3. Live Wazuh SIEM Screenshots (`evidence/Screenshots/`)
+
+- **Active Endpoints (`Win10` & `ubuntu-01`)**: [`evidence/Screenshots/ActiveEndpoint-WAZUH.png`](evidence/Screenshots/ActiveEndpoint-WAZUH.png)
+- **6-Panel Custom Tier-1 Dashboard**: [`evidence/Screenshots/Dashboard-WAZUH.png`](evidence/Screenshots/Dashboard-WAZUH.png)
+- **Threat Hunting Overview**: [`evidence/Screenshots/ThreatHunt-WAZUH.png`](evidence/Screenshots/ThreatHunt-WAZUH.png)
+- **Security Events Stream**: [`evidence/Screenshots/Events-WAZUH.png`](evidence/Screenshots/Events-WAZUH.png)
+- **MITRE ATT&CK Overview**: [`evidence/Screenshots/MITRE ATT&CK-WAZUH.png`](evidence/Screenshots/MITRE%20ATT%26CK-WAZUH.png)
+- **Discover Log Stream**: [`evidence/Screenshots/Discover-WAZUH.png`](evidence/Screenshots/Discover-WAZUH.png)

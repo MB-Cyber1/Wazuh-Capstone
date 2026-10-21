@@ -6,6 +6,8 @@
 - **Credentials**: `admin` / `SecretPassword`
 - **Exported Saved Objects Bundle**: [`soc_capstone_tier1_dashboard.ndjson`](../../detections/dashboard/soc_capstone_tier1_dashboard.ndjson)
 
+![SOC Capstone 6-Panel Tier-1 Analyst Triage Dashboard](../../evidence/Screenshots/Dashboard-WAZUH.png)
+
 ---
 
 ## 2. Dashboard Panels Specification (6 Panels)
