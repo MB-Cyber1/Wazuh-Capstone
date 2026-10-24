@@ -1,12 +1,12 @@
 title: Ingress Tool Transfer via Windows LOLBins (SOC-100013)
 id: 6d4f8a10-1013-4b19-9a04-000000100013
-status: stable
-description: Detects built-in Windows binaries (certutil, bitsadmin, mshta, regsvr32) used to download remote files over HTTP/HTTPS.
+status: experimental
+description: Detects built-in Windows binaries (certutil, bitsadmin, mshta, regsvr32) pointed at a remote URL or a BITS transfer job. Also matches on OriginalFileName, so renamed copies are caught. Cache housekeeping with no URL (certutil -urlcache * delete) is not a download and does not match.
 references:
-  - https://attack.mitre.org/techniques/T1105/
-  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_certutil_download.yml
+  - https://github.com/SigmaHQ/sigma/blob/05d1031f537e830b76da53bae2400c5814c89165/rules/windows/process_creation/proc_creation_win_certutil_download.yml
 author: Saif Asender (Adapted from SigmaHQ)
 date: 2026-10-19
+modified: 2026-10-24
 tags:
   - attack.command-and-control
   - attack.t1105
@@ -15,18 +15,22 @@ logsource:
   product: windows
 detection:
   selection_img:
-    Image|endswith:
-      - '\certutil.exe'
-      - '\bitsadmin.exe'
-      - '\mshta.exe'
-      - '\regsvr32.exe'
+    - Image|endswith:
+        - '\certutil.exe'
+        - '\bitsadmin.exe'
+        - '\mshta.exe'
+        - '\regsvr32.exe'
+    - OriginalFileName:
+        - 'CertUtil.exe'
+        - 'bitsadmin.exe'
+        - 'MSHTA.EXE'
+        - 'REGSVR32.EXE'
   selection_cli:
     CommandLine|contains:
-      - '-urlcache'
-      - '-verifyctl'
-      - '/transfer'
       - 'http://'
       - 'https://'
+      - 'ftp://'
+      - '/transfer'
       - 'scrobj.dll'
   condition: selection_img and selection_cli
 falsepositives:

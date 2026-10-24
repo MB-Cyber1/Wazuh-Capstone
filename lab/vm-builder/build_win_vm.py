@@ -244,7 +244,8 @@ if (Test-Path $ossec) {{
   </localfile>
 </ossec_config>
 "@
-        $cfg = $cfg -replace '</ossec_config>$', $sysmonBlock
+        # the MSI writes ossec.conf with CRLF + trailing blank lines, so a bare '>$' never matched
+        $cfg = $cfg -replace '</ossec_config>\\s*$', $sysmonBlock
         Set-Content -Path $ossec -Value $cfg -Encoding UTF8
     }}
 }}

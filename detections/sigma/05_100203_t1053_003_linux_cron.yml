@@ -1,18 +1,20 @@
 title: Linux Scheduled Task Persistence via Crontab Execution (SOC-100203)
 id: 6d4f8a10-1203-4b19-9a05-000000100203
-status: stable
-description: Detects execution of /usr/bin/crontab via Linux auditd SYSCALL/EXECVE records to install or replace scheduled cron jobs.
-references:
-  - https://attack.mitre.org/techniques/T1053/003/
+status: experimental
+description: Detects successful execution of /usr/bin/crontab (auditd SYSCALL record, execve) to install, edit or replace scheduled cron jobs. Direct writes to /etc/crontab, /etc/cron.d or the crontab spool that bypass the crontab binary are not covered.
 author: SOC Capstone Team
 date: 2026-10-19
+modified: 2026-10-24
 tags:
+  - attack.execution
   - attack.persistence
+  - attack.privilege-escalation
   - attack.t1053.003
 logsource:
   product: linux
   service: auditd
 detection:
+  # syscall 59 = execve on x86_64
   selection:
     type: 'SYSCALL'
     exe: '/usr/bin/crontab'
@@ -21,4 +23,8 @@ detection:
   condition: selection
 falsepositives:
   - Scheduled system maintenance by authorized Linux administrators
+  # The arguments live in the separate EXECVE record, so the listing-only form can't be
+  # filtered in a single-record rule. The Wazuh rule (100203) drops it using the grouped
+  # audit event; per-record backends need their own EXECVE-based filter.
+  - Listing jobs with crontab -l / crontab -u <user> -l
 level: medium

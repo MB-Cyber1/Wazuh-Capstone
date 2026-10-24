@@ -1,11 +1,10 @@
 title: Remote Desktop Protocol Lateral Movement Logon Type 10 (SOC-100204)
 id: 6d4f8a10-1204-4b19-9a07-000000100204
-status: stable
+status: experimental
 description: Detects successful Windows RDP interactive logons (Event ID 4624, LogonType 10) originating from a non-loopback network address.
-references:
-  - https://attack.mitre.org/techniques/T1021/001/
 author: SOC Capstone Team
 date: 2026-10-19
+modified: 2026-10-22
 tags:
   - attack.lateral-movement
   - attack.t1021.001

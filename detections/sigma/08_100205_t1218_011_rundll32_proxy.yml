@@ -1,12 +1,12 @@
 title: Suspicious System Binary Proxy Execution via Rundll32 (SOC-100205)
 id: 6d4f8a10-1205-4b19-9a08-000000100205
-status: stable
-description: Detects rundll32.exe invoking url.dll FileProtocolHandler, script engines, comsvcs.dll MiniDump, or DLLs from user-writable directories. Maps to ATT&CK v19 Stealth tactic (TA0005).
+status: experimental
+description: Detects rundll32.exe invoking url.dll FileProtocolHandler, script engines, comsvcs (MiniDump, with or without .dll / by ordinal), or DLLs from user-writable directories. Also matches on OriginalFileName, so a renamed rundll32 is caught. Maps to ATT&CK v19 Stealth tactic (TA0005).
 references:
-  - https://attack.mitre.org/techniques/T1218/011/
-  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_rundll32_ suspicious_activity.yml
+  - https://github.com/SigmaHQ/sigma/blob/05d1031f537e830b76da53bae2400c5814c89165/rules/windows/process_creation/proc_creation_win_rundll32_susp_activity.yml
 author: Mohammad Alodeh (Adapted from SigmaHQ)
 date: 2026-10-19
+modified: 2026-10-24
 tags:
   - attack.stealth
   - attack.t1218.011
@@ -15,7 +15,8 @@ logsource:
   product: windows
 detection:
   selection_img:
-    Image|endswith: '\rundll32.exe'
+    - Image|endswith: '\rundll32.exe'
+    - OriginalFileName: 'RUNDLL32.EXE'
   selection_cli:
     CommandLine|contains:
       - 'url.dll'
@@ -24,7 +25,7 @@ detection:
       - 'vbscript:'
       - 'mshtml'
       - 'scrobj.dll'
-      - 'comsvcs.dll'
+      - 'comsvcs'
       - 'MiniDump'
       - '\Users\'
       - '\Temp\'

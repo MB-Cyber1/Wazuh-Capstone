@@ -1,25 +1,44 @@
 title: Registry Run or RunOnce Persistence Key Modification (SOC-100206)
 id: 6d4f8a10-1206-4b19-9a09-000000100206
-status: stable
-description: Detects registry value creation/modification (Sysmon Event ID 13 SetValue) under CurrentVersion\Run or CurrentVersion\RunOnce.
+status: experimental
+description: Detects a registry value being set (Sysmon Event ID 13) under the Run/RunOnce autostart keys, including the 32-bit WOW6432Node view, RunOnceEx, RunServices(Once) and Policies\Explorer\Run. OneDrive re-registering its own autostart entry is filtered out (Wazuh rule 100208); a fake OneDrive value pointing anywhere else still matches.
 references:
-  - https://attack.mitre.org/techniques/T1547/001/
-  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/registry/registry_set/registry_set_asep_reg_keys_modification_currentversion.yml
+  - https://github.com/SigmaHQ/sigma/blob/05d1031f537e830b76da53bae2400c5814c89165/rules/windows/registry/registry_set/registry_set_asep_reg_keys_modification_currentversion.yml
 author: Mohammad Alodeh (Adapted from SigmaHQ)
 date: 2026-10-19
+modified: 2026-10-24
 tags:
   - attack.persistence
+  - attack.privilege-escalation
   - attack.t1547.001
 logsource:
   category: registry_set
   product: windows
 detection:
   selection:
-    EventType: 'SetValue'
     TargetObject|contains:
       - '\Software\Microsoft\Windows\CurrentVersion\Run\'
       - '\Software\Microsoft\Windows\CurrentVersion\RunOnce\'
-  condition: selection
+      - '\Software\Microsoft\Windows\CurrentVersion\RunOnceEx\'
+      - '\Software\Microsoft\Windows\CurrentVersion\RunServices\'
+      - '\Software\Microsoft\Windows\CurrentVersion\RunServicesOnce\'
+      - '\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run\'
+      - '\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Run\'
+      - '\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOnce\'
+      - '\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOnceEx\'
+      - '\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\RunServices\'
+      - '\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\RunServicesOnce\'
+      - '\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run\'
+  # image, value name and data all have to match, same as 100208
+  filter_onedrive_run:
+    Image|re|i: '^C:\\Users\\[^\\]+\\AppData\\Local\\Microsoft\\OneDrive\\OneDrive\.exe$'
+    TargetObject|endswith: '\CurrentVersion\Run\OneDrive'
+    Details|re|i: '^"C:\\Users\\[^\\]+\\AppData\\Local\\Microsoft\\OneDrive\\OneDrive\.exe" /background$'
+  filter_onedrive_update:
+    Image|re|i: '^C:\\Users\\[^\\]+\\AppData\\Local\\Microsoft\\OneDrive\\Update\\OneDriveSetup\.exe$'
+    TargetObject|re|i: '\\CurrentVersion\\RunOnce\\Delete Cached (Standalone )?Update Binary$'
+    Details|re|i: '^C:\\Windows\\system32\\cmd\.exe /q /c del /q "C:\\Users\\[^\\]+\\AppData\\Local\\Microsoft\\OneDrive\\(Update|StandaloneUpdater)\\OneDriveSetup\.exe"$'
+  condition: selection and not 1 of filter_onedrive_*
 falsepositives:
-  - Legitimate user-mode software updaters (e.g., OneDrive, Microsoft Edge Update, Teams)
+  - Other legitimate software that registers itself to run at logon (updaters, sync clients)
 level: medium

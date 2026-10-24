@@ -1,24 +1,32 @@
 title: Windows Security or System Event Log Cleared (SOC-100207)
 id: 6d4f8a10-1207-4b19-9a10-000000100207
-status: stable
-description: Detects clearing of the Windows Security (Event ID 1102) or System/Application (Event ID 104) event logs via wevtutil or Event Viewer. Maps to ATT&CK v19 Defense Impairment tactic (TA0112, T1685.005).
+status: experimental
+description: Detects the Windows Security log (Event ID 1102) or another event log such as System (Event ID 104) being cleared, e.g. with wevtutil cl or Event Viewer. Restricted to the Eventlog provider because other System providers reuse IDs 104/1102 for unrelated events. Maps to ATT&CK v19 Defense Impairment (TA0112, T1685.005); ATT&CK v18 and older list this as T1070.001.
 references:
-  - https://attack.mitre.org/techniques/T1685/
-  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/security/win_security_audit_log_cleared.yml
+  - https://github.com/SigmaHQ/sigma/blob/05d1031f537e830b76da53bae2400c5814c89165/rules/windows/builtin/security/win_security_audit_log_cleared.yml
 author: Mohammad Bustami (Adapted from SigmaHQ)
 date: 2026-10-19
+modified: 2026-10-24
 tags:
   - attack.defense-impairment
   - attack.t1685.005
 logsource:
   product: windows
-  service: security
 detection:
-  selection:
-    EventID:
-      - 1102
-      - 104
-  condition: selection
+  # 1102 is only written to Security and 104 only to System, so the channel is part of each branch
+  selection_security:
+    Channel: Security
+    Provider_Name:
+      - 'Microsoft-Windows-Eventlog'
+      - 'Eventlog'
+    EventID: 1102
+  selection_system:
+    Channel: System
+    Provider_Name:
+      - 'Microsoft-Windows-Eventlog'
+      - 'Eventlog'
+    EventID: 104
+  condition: 1 of selection_*
 falsepositives:
   - Authorized maintenance window log rotation with an approved change ticket
 level: high

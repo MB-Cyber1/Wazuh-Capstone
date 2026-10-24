@@ -1,12 +1,12 @@
 title: Credential Dumping via LSASS Process Memory Access (SOC-100201)
 id: 6d4f8a10-1201-4b19-9a03-000000100201
-status: stable
-description: Detects non-system processes opening lsass.exe with memory-read or dump permissions (Sysmon Event ID 10), indicative of credential dumping (Task Manager dump, comsvcs.dll MiniDump, Procdump, or Mimikatz).
+status: experimental
+description: Detects non-system processes opening lsass.exe with an access mask that can read its memory (PROCESS_VM_READ, 0x10) or duplicate its handles (0x40), as used by Task Manager dumps, comsvcs.dll MiniDump, ProcDump or Mimikatz (Sysmon Event ID 10). 0x1000 (PROCESS_QUERY_LIMITED_INFORMATION) is deliberately not included - it can't read memory and was the source of every false positive in the lab.
 references:
-  - https://attack.mitre.org/techniques/T1003/001/
-  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_access/proc_access_win_lsass_memdump.yml
+  - https://github.com/SigmaHQ/sigma/blob/05d1031f537e830b76da53bae2400c5814c89165/rules/windows/process_access/proc_access_win_lsass_memdump.yml
 author: Mohammad Bustami (Adapted from SigmaHQ)
 date: 2026-10-19
+modified: 2026-10-24
 tags:
   - attack.credential-access
   - attack.t1003.001
@@ -16,7 +16,8 @@ logsource:
 detection:
   selection:
     TargetImage|endswith: '\lsass.exe'
-    GrantedAccess|contains:
+    # exact values, as Sysmon logs them (unpadded: 0x10, not 0x0010)
+    GrantedAccess:
       - '0x1010'
       - '0x1410'
       - '0x1438'
@@ -26,8 +27,8 @@ detection:
       - '0x1f1fff'
       - '0x1f2fff'
       - '0x1f3fff'
-      - '0x1000'
-      - '0x0040'
+      - '0x10'
+      - '0x40'
   filter_system:
     SourceImage:
       - 'C:\Windows\System32\svchost.exe'
@@ -35,9 +36,15 @@ detection:
       - 'C:\Windows\System32\wininit.exe'
       - 'C:\Windows\System32\services.exe'
       - 'C:\Windows\System32\lsass.exe'
+      - 'C:\Windows\System32\CompatTelRunner.exe'
+      - 'C:\Windows\System32\taskhostw.exe'
+      - 'C:\Windows\System32\conhost.exe'
+      - 'C:\Windows\System32\WerFault.exe'
       - 'C:\Windows\System32\wbem\wmiprvse.exe'
   filter_defender:
-    SourceImage|startswith: 'C:\ProgramData\Microsoft\Windows Defender\Platform\'
+    SourceImage|startswith:
+      - 'C:\ProgramData\Microsoft\Windows Defender\'
+      - 'C:\Program Files\Windows Defender\'
     SourceImage|endswith: '\MsMpEng.exe'
   condition: selection and not 1 of filter_*
 falsepositives:

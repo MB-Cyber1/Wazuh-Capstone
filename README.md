@@ -15,6 +15,7 @@
 | :--- | :--- | :--- |
 | **Wazuh Dashboard (SIEM UI)** | `https://192.168.99.10` | Username: `admin`<br/>Password: `SecretPassword` |
 | **Custom Tier-1 Dashboard** | `https://192.168.99.10/app/dashboards#/view/soc-capstone-tier1-dashboard` | `admin` / `SecretPassword` |
+| **Alerts (Alerting monitor queue)** | `https://192.168.99.10/app/alerting#/dashboard` (Explore → Alerting) — see [`DASHBOARD_GUIDE.md` §4](detections/dashboard/DASHBOARD_GUIDE.md) | `admin` / `SecretPassword` |
 | **`SOC-Wazuh` VM (Ubuntu 24.04 + Docker)** | `192.168.99.10` (`Agent 000`) | `ssh -i ~/.ssh/soclab_ed25519 soc@192.168.99.10` (`SocLab!2026`) |
 | **`Win10` VM (Windows 11 Enterprise + Sysmon)** | `192.168.99.30` (`Agent 002`) | `ssh -i ~/.ssh/soclab_ed25519 soc@192.168.99.30` (`SocLab!2026`) |
 | **`ubuntu-01` VM (Ubuntu 24.04 + `auditd` + `nginx`)** | `192.168.99.40` (`Agent 001`) | `ssh -i ~/.ssh/soclab_ed25519 soc@192.168.99.40` (`SocLab!2026`) |

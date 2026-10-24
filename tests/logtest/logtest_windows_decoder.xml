@@ -1,0 +1,19 @@
+<!--
+  TEST CONTAINER ONLY - never copy this to the real manager.
+
+  wazuh-logtest can't take raw Windows eventchannel input: the agent ships the
+  event XML and analysisd turns it into {"win":{...}} internally, tagging it
+  with the built-in "windows_eventchannel" decoder (type ossec). If you replay
+  the stored full_log JSON, it gets the generic "json" decoder (type syslog),
+  stops at rule 1 / 1003 and never reaches the Windows tree.
+
+  This file is installed as ruleset/decoders/0004-logtest_windows_eventchannel.xml
+  in the test container so it loads before 0006-json_decoders.xml. Same name and
+  type as the internal decoder, so rule 60000 -> 61600 (sysmon) -> 92xxx -> our
+  1000xx rules run on replayed events exactly like in production.
+-->
+<decoder name="windows_eventchannel">
+  <type>ossec</type>
+  <prematch>^{"win":</prematch>
+  <plugin_decoder>JSON_Decoder</plugin_decoder>
+</decoder>
