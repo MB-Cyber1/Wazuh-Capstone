@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
-# Start (or resume) the three lab VMs headless, fix Win10's clock and show
-# agent status. Run from Git Bash on the analyst PC:
+# Start (or resume) the three lab VMs headless, fix Win10's clock and Docker's
+# bridge, and show agent status. Run from Git Bash on the analyst PC:
 #
 #   lab/start_lab.sh
+#
+# Setting Win10's clock logs in over SSH as soc, so don't run this within
+# 5 minutes of a card 02 brute-force test (any soc logon then fires 100200).
 set -euo pipefail
 
 VMRUN="/c/Program Files (x86)/VMware/VMware Workstation/vmrun.exe"
@@ -35,6 +38,17 @@ echo "Win10 clock set to $now"
 
 # containers restart on their own (restart: always); wait for both agents
 ssh_ soc@192.168.99.10 bash -s <<'EOF'
+# After a suspend/resume, VMware Tools restarts the VM's networking, which can
+# strip the IPv4 address off Docker's bridge: the containers keep running, but
+# the agents (1514), the indexer API and the dashboard become unreachable.
+NET=single-node_default
+BR=br-$(sudo docker network inspect $NET -f '{{.Id}}' | cut -c1-12)
+GW=$(sudo docker network inspect $NET -f '{{(index .IPAM.Config 0).Gateway}}')
+PFX=$(sudo docker network inspect $NET -f '{{(index .IPAM.Config 0).Subnet}}' | cut -d/ -f2)
+if ! ip -4 addr show "$BR" | grep -q "inet $GW/"; then
+  sudo ip addr add "$GW/$PFX" dev "$BR" && echo "repaired docker bridge $BR ($GW/$PFX)"
+fi
+
 for i in $(seq 1 60); do
   n=$(sudo docker exec single-node-wazuh.manager-1 /var/ossec/bin/agent_control -l 2>/dev/null | grep -cE 'ID: 00[12].*Active' || true)
   [ "$n" = 2 ] && break
