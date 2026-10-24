@@ -1,0 +1,147 @@
+{
+  "type": "monitor",
+  "monitor_type": "bucket_level_monitor",
+  "name": "SOC Capstone - custom rule alerts",
+  "enabled": true,
+  "schedule": {
+    "period": {
+      "interval": 1,
+      "unit": "MINUTES"
+    }
+  },
+  "inputs": [
+    {
+      "search": {
+        "indices": [
+          "wazuh-alerts-*"
+        ],
+        "query": {
+          "size": 0,
+          "query": {
+            "bool": {
+              "filter": [
+                {
+                  "range": {
+                    "timestamp": {
+                      "gte": "{{period_end}}||-5m",
+                      "lte": "{{period_end}}",
+                      "format": "epoch_millis"
+                    }
+                  }
+                },
+                {
+                  "term": {
+                    "rule.groups": "soc_capstone"
+                  }
+                }
+              ]
+            }
+          },
+          "aggregations": {
+            "composite_agg": {
+              "composite": {
+                "size": 100,
+                "sources": [
+                  {
+                    "rule_id": {
+                      "terms": {
+                        "field": "rule.id"
+                      }
+                    }
+                  },
+                  {
+                    "agent_name": {
+                      "terms": {
+                        "field": "agent.name"
+                      }
+                    }
+                  }
+                ]
+              },
+              "aggs": {
+                "max_level": {
+                  "max": {
+                    "field": "rule.level"
+                  }
+                },
+                "last_seen": {
+                  "max": {
+                    "field": "timestamp"
+                  }
+                },
+                "description": {
+                  "terms": {
+                    "field": "rule.description",
+                    "size": 1
+                  }
+                },
+                "mitre": {
+                  "terms": {
+                    "field": "rule.mitre.id",
+                    "size": 3
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "triggers": [
+    {
+      "bucket_level_trigger": {
+        "name": "Critical - custom rule level >= 12 (100200, 100201, 100207)",
+        "severity": "1",
+        "condition": {
+          "buckets_path": {
+            "max_level": "max_level"
+          },
+          "parent_bucket_path": "composite_agg",
+          "script": {
+            "source": "params.max_level >= 12",
+            "lang": "painless"
+          },
+          "gap_policy": "skip"
+        },
+        "actions": []
+      }
+    },
+    {
+      "bucket_level_trigger": {
+        "name": "High - custom rule level 10-11 (100005, 100007, 100013, 100202)",
+        "severity": "2",
+        "condition": {
+          "buckets_path": {
+            "max_level": "max_level"
+          },
+          "parent_bucket_path": "composite_agg",
+          "script": {
+            "source": "params.max_level >= 10 && params.max_level < 12",
+            "lang": "painless"
+          },
+          "gap_policy": "skip"
+        },
+        "actions": []
+      }
+    },
+    {
+      "bucket_level_trigger": {
+        "name": "Medium - custom rule level 8-9 (100203, 100204, 100205, 100206)",
+        "severity": "3",
+        "condition": {
+          "buckets_path": {
+            "max_level": "max_level"
+          },
+          "parent_bucket_path": "composite_agg",
+          "script": {
+            "source": "params.max_level < 10",
+            "lang": "painless"
+          },
+          "gap_policy": "skip"
+        },
+        "actions": []
+      }
+    }
+  ]
+}

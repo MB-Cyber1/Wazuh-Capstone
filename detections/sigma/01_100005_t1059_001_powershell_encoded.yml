@@ -1,12 +1,12 @@
 title: Suspicious PowerShell Encoded Command or Download Cradle (SOC-100005)
 id: 6d4f8a10-1005-4b19-9a01-000000100005
-status: stable
-description: Detects PowerShell or pwsh execution with encoded commands (-enc/-EncodedCommand), Base64 decoding, or web download cradles.
+status: experimental
+description: Detects PowerShell or pwsh started with an encoded command (-enc/-EncodedCommand and every abbreviation of it, or -e/-ec/-en followed by a Base64 blob), Base64 decoding, or a web download cradle. Also matches on OriginalFileName, so a renamed powershell.exe is still caught.
 references:
-  - https://attack.mitre.org/techniques/T1059/001/
-  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_powershell_base64_encoded_cmd.yml
+  - https://github.com/SigmaHQ/sigma/blob/05d1031f537e830b76da53bae2400c5814c89165/rules/windows/process_creation/proc_creation_win_powershell_base64_encoded_cmd.yml
 author: Mohammad Bustami (Adapted from SigmaHQ)
 date: 2026-10-19
+modified: 2026-10-24
 tags:
   - attack.execution
   - attack.t1059.001
@@ -15,21 +15,33 @@ logsource:
   product: windows
 detection:
   selection_img:
-    Image|endswith:
-      - '\powershell.exe'
-      - '\pwsh.exe'
-  selection_cli:
+    - Image|endswith:
+        - '\powershell.exe'
+        - '\pwsh.exe'
+    - OriginalFileName:
+        - 'PowerShell.EXE'
+        - 'pwsh.dll'
+  # same flag list as the Wazuh rule; the dash can be - / or a Unicode dash
+  selection_cli_encoded:
+    CommandLine|re|i: '\s[-/–—―](enc|enco|encod|encode|encoded|encodedc|encodedco|encodedcom|encodedcomm|encodedcomma|encodedcomman|encodedcommand)\b'
+  # -e/-ec/-en only with a Base64 blob after them, so -ExecutionPolicy, -ep and "docker run -e X=y" don't match
+  selection_cli_short:
+    CommandLine|re|i: '\s[-/–—―](e|ec|en)\s+["'']?[A-Za-z0-9+/]{16,}={0,2}(["'']|\s|$)'
+  selection_cli_cradle:
     CommandLine|contains:
-      - ' -enc '
-      - ' -EncodedCommand '
       - 'FromBase64String'
       - 'DownloadString'
       - 'DownloadFile'
+      - 'DownloadData'
+      - 'Net.WebClient'
+      - 'Start-BitsTransfer'
       - 'Invoke-WebRequest'
       - 'Invoke-RestMethod'
       - 'Invoke-Expression'
-      - 'iex '
-  condition: selection_img and selection_cli
+  selection_cli_alias:
+    CommandLine|re|i: '\b(iwr|irm|wget|curl|iex)\b'
+  condition: selection_img and 1 of selection_cli_*
 falsepositives:
   - Legitimate administrative deployment or SCCM/Intune scripts using Base64 parameters
+  - Scripts that call curl.exe or mention the wget/curl aliases by name
 level: high

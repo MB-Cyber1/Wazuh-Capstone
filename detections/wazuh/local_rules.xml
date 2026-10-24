@@ -13,12 +13,17 @@
        Rule 1: 100005 - T1059.001 PowerShell Execution (Encoded / Download Cradle)
        Tactic: Execution (TA0002) | Host: Win10 | Log source: Sysmon Event 1
        Trigger: powershell -enc dwBoAG8AYQBtAGkA
+       originalFileName (not image) so a renamed powershell.exe still matches.
+       -e/-ec/-en need a base64 blob after them so -ExecutionPolicy, -ep and
+       "docker run -e X=y" stay quiet. Quotes arrive as \" from the agent.
+       Description leaves out the command line: past ~925 chars Wazuh can't
+       expand it and prints the literal $(...) placeholder.
        ========================================================================= -->
   <rule id="100005" level="10">
-    <if_sid>61603,92004,92005,92021,92027,92028,92029,92052,92057,92065,92066,92070,92071</if_sid>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\+(powershell|pwsh)\.exe$</field>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)(\s-[eE][nN][cC]\b|\s-[eE]ncoded[cC]ommand\b|FromBase64String|DownloadString|DownloadFile|Invoke-WebRequest|Invoke-RestMethod|\biwr\b|\birm\b|\biex\b|Invoke-Expression)</field>
-    <description>SOC-100005 [T1059.001]: Suspicious PowerShell execution with encoded command or download cradle ($(win.eventdata.commandLine))</description>
+    <if_sid>61603,92004,92005,92021,92027,92028,92029,92052,92057,92065,92066,92069,92070,92071</if_sid>
+    <field name="win.eventdata.originalFileName" type="pcre2">(?i)^(powershell\.exe|pwsh\.dll)$</field>
+    <field name="win.eventdata.commandLine" type="pcre2">(*UTF)(?i)(\s[-/\x{2013}\x{2014}\x{2015}](enc|enco|encod|encode|encoded|encodedc|encodedco|encodedcom|encodedcomm|encodedcomma|encodedcomman|encodedcommand)\b|\s[-/\x{2013}\x{2014}\x{2015}](e|ec|en)\s+(\\*["'])?[A-Za-z0-9+/]{16,}={0,2}(?![A-Za-z0-9+/=])|FromBase64String|DownloadString|DownloadFile|DownloadData|Net\.WebClient|Start-BitsTransfer|Invoke-WebRequest|Invoke-RestMethod|\b(iwr|irm|wget|curl)\b|\biex\b|Invoke-Expression)</field>
+    <description>SOC-100005 [T1059.001]: Suspicious PowerShell execution with encoded command or download cradle by $(win.eventdata.user) (parent: $(win.eventdata.parentImage))</description>
     <mitre>
       <id>T1059.001</id>
     </mitre>
@@ -27,7 +32,7 @@
 
   <!-- =========================================================================
        Rule 2a: 100007 - T1110 Brute Force (5 failed logons for one user in 2 min)
-       Tactic: Credential Access (TA0006) | Host: Win10, DC01 | Log: Security 4625
+       Tactic: Credential Access (TA0006) | Host: Win10 | Log: Security 4625
        ========================================================================= -->
   <rule id="100007" level="10" frequency="5" timeframe="120">
     <if_matched_sid>60122</if_matched_sid>
@@ -58,14 +63,18 @@
 
   <!-- =========================================================================
        Rule 2b (CORRELATION): 100200 - T1110 Brute Force Followed by Logon Success
-       Tactic: Credential Access (TA0006) | Host: Win10, DC01 | Log: 4625 -> 4624
+       Tactic: Credential Access (TA0006) | Host: Win10 | Log: 4625 -> 4624
        Trigger: 5 wrong passwords, then the right one for the same user within 5m
+       Fires for every logon of that user in the 5 min window (by design - any of
+       them could be the attacker), so test with a throwaway account, not the
+       one you SSH in with. Level 13 beats 100204, so an RDP logon in the window
+       shows up here; logon type + IP are in the description for that reason.
        ========================================================================= -->
   <rule id="100200" level="13" timeframe="300">
     <if_sid>60106,60118,60119,67022,92651,92652,92653,92656,92657,100204</if_sid>
     <if_matched_sid>100007</if_matched_sid>
     <same_field>win.eventdata.targetUserName</same_field>
-    <description>SOC-100200 [T1110 CORRELATION]: Successful logon (Event 4624) for $(win.eventdata.targetUserName) within 5 minutes of brute-force alert (100007)</description>
+    <description>SOC-100200 [T1110 CORRELATION]: Successful logon (Event 4624, type $(win.eventdata.logonType)) for $(win.eventdata.targetUserName) from $(win.eventdata.ipAddress) within 5 minutes of brute-force alert (100007)</description>
     <mitre>
       <id>T1110</id>
       <id>T1078</id>
@@ -77,11 +86,15 @@
        Rule 3: 100201 - T1003.001 LSASS Memory Access (Credential Dumping)
        Tactic: Credential Access (TA0006) | Host: Win10 | Log: Sysmon Event 10
        Trigger: Task Manager -> lsass.exe -> Create dump file (or comsvcs MiniDump)
+       Only masks that include PROCESS_VM_READ (0x10) or DUP_HANDLE (0x40).
+       0x1000 (query limited info) was dropped: it can't read memory and was the
+       source of every false positive (EdgeUpdate, MRT, svchost, Defender).
+       Sysmon logs masks unpadded (0x10, not 0x0010).
        ========================================================================= -->
   <rule id="100201" level="14">
     <if_group>sysmon_event_10</if_group>
     <field name="win.eventdata.targetImage" type="pcre2">(?i)\\+lsass\.exe$</field>
-    <field name="win.eventdata.grantedAccess" type="pcre2">(?i)^(0x1000|0x1010|0x1410|0x1438|0x143a|0x1fffff|0x1f0fff|0x1f1fff|0x1f2fff|0x1f3fff|0x0010|0x0040)$</field>
+    <field name="win.eventdata.grantedAccess" type="pcre2">(?i)^(0x1010|0x1410|0x1438|0x143a|0x1fffff|0x1f0fff|0x1f1fff|0x1f2fff|0x1f3fff|0x10|0x40)$</field>
     <field name="win.eventdata.sourceImage" type="pcre2">^(?!(?i)C:\\+Windows\\+System32\\+(svchost|csrss|wininit|services|lsass|CompatTelRunner|taskhostw|conhost|WerFault|wbem\\+wmiprvse)\.exe$|C:\\+(ProgramData|Program Files)\\+(Microsoft\\+)?Windows Defender\\+.*\\+MsMpEng\.exe$).+</field>
     <description>SOC-100201 [T1003.001]: Process $(win.eventdata.sourceImage) accessed lsass.exe memory with rights $(win.eventdata.grantedAccess)</description>
     <mitre>
@@ -93,12 +106,17 @@
   <!-- =========================================================================
        Rule 4: 100013 - T1105 Ingress Tool Transfer (certutil / LOLBin download)
        Tactic: Command and Control (TA0011) | Host: Win10 | Log: Sysmon Event 1
-       Trigger: certutil -urlcache -f http://192.168.99.40/a.txt C:\Temp\a.txt
+       Trigger: bitsadmin /transfer socJob /download http://192.168.99.40/index.nginx-debian.html C:\Temp\bits.txt
+       (certutil -urlcache -f http://... is in scope too, but Defender on Win10
+       kills it before Sysmon logs it - see card 04)
+       Needs a remote URL / transfer: "certutil -urlcache * delete" is cache
+       housekeeping, not a download. 92016/92017 left out of if_sid so a renamed
+       certutil keeps its level 13 built-in alert instead of dropping to 10.
        ========================================================================= -->
   <rule id="100013" level="10">
-    <if_sid>61603,92016,92017,92018,92052,92066,92072,92073,92074,92075</if_sid>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\+(certutil|bitsadmin|mshta|regsvr32)\.exe$</field>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)(-urlcache|-verifyctl|/transfer|https?://|scrobj\.dll)</field>
+    <if_sid>61603,92018,92052,92066,92069,92072,92073,92074,92075</if_sid>
+    <field name="win.eventdata.originalFileName" type="pcre2">(?i)^(certutil|bitsadmin|mshta|regsvr32)\.exe$</field>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)(https?://|ftp://|/transfer\b|scrobj\.dll)</field>
     <description>SOC-100013 [T1105]: LOLBin file download detected via $(win.eventdata.image) ($(win.eventdata.commandLine))</description>
     <mitre>
       <id>T1105</id>
@@ -116,6 +134,9 @@
     <field name="audit.exe">^/usr/bin/crontab$</field>
     <field name="audit.syscall">^59$</field>
     <field name="audit.success">^yes$</field>
+    <!-- crontab -l only lists jobs, so skip it. Not when a double-dash argument
+         comes first: that form installs a crontab from a file named "-l". -->
+    <regex type="pcre2" negate="yes">argc=\d+ a0="[^"]*"(?: a\d+="(?!--")[^"]*")*? a\d+="-l"</regex>
     <description>SOC-100203 [T1053.003]: Linux crontab command executed by uid=$(audit.uid) (auid=$(audit.auid)) to edit or replace scheduled jobs</description>
     <mitre>
       <id>T1053.003</id>
@@ -126,12 +147,16 @@
   <!-- =========================================================================
        Rule 6: 100202 - T1098.004 SSH Authorized Keys Modification on Linux
        Tactic: Persistence (TA0003) | Host: ubuntu-01 | Log: auditd file watch
-       Trigger: echo "ssh-rsa AAAA test" >> /home/kali/.ssh/authorized_keys
+       Trigger: echo "ssh-rsa AAAA test" | sudo tee -a /home/kali/.ssh/authorized_keys
+       Matches any PATH record of the event, not audit.file.name: for renames
+       (sed -i, mv, editors) the decoder puts the .ssh dir in file.name.
+       authorized_keys2 is still read by sshd on Ubuntu 24.04. /root/.ssh is
+       watched by the Neo23x0 rules under key "rootkey". 92600 = any python exe.
        ========================================================================= -->
   <rule id="100202" level="10">
-    <if_sid>80700,80780,80781,80784,80790,80791,80792</if_sid>
-    <field name="audit.key">^ssh_authorized_keys$|^ssh$</field>
-    <field name="audit.file.name" type="pcre2">authorized_keys$</field>
+    <if_sid>80700,80780,80781,80784,80790,80791,80792,92600</if_sid>
+    <field name="audit.key">^ssh_authorized_keys$|^ssh$|^rootkey$</field>
+    <regex type="pcre2">type=PATH msg=audit\(\S+\): item=\d+ name="(?:[^"]*/)?authorized_keys2?"</regex>
     <field name="audit.exe" type="pcre2">^(?!/usr/sbin/sshd$).+</field>
     <description>SOC-100202 [T1098.004]: Write to SSH authorized_keys ($(audit.file.name)) by process $(audit.exe) (uid=$(audit.uid))</description>
     <mitre>
@@ -146,9 +171,9 @@
        Trigger: rundll32 url.dll,FileProtocolHandler calc.exe
        ========================================================================= -->
   <rule id="100205" level="9">
-    <if_sid>61603,92046,92052,92066,92076,92079</if_sid>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\+rundll32\.exe$</field>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)(url\.dll|FileProtocolHandler|javascript:|vbscript:|mshtml|scrobj\.dll|comsvcs\.dll|MiniDump|\\+Users\\+|\\+Temp\\+|\\+AppData\\+|\\+ProgramData\\+)</field>
+    <if_sid>61603,92046,92052,92066,92069,92076,92079</if_sid>
+    <field name="win.eventdata.originalFileName" type="pcre2">(?i)^rundll32\.exe$</field>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)(url\.dll|FileProtocolHandler|javascript:|vbscript:|mshtml|scrobj\.dll|comsvcs|MiniDump|\\+Users\\+|\\+Temp\\+|\\+AppData\\+|\\+ProgramData\\+)</field>
     <description>SOC-100205 [T1218.011]: Suspicious rundll32 proxy execution ($(win.eventdata.commandLine))</description>
     <mitre>
       <id>T1218.011</id>
@@ -160,11 +185,13 @@
        Rule 9: 100206 - T1547.001 Registry Run / RunOnce Key Persistence
        Tactic: Persistence (TA0003) | Host: Win10 | Log: Sysmon Event 13
        Trigger: reg add HKCU\Software\Microsoft\Windows\CurrentVersion\Run /v T /d calc.exe
+       92301 (.lnk/.vbs payload) and 92303 (VNC) aren't parents on purpose: they
+       are level 12 and should keep that level instead of folding into this one.
        ========================================================================= -->
   <rule id="100206" level="9">
-    <if_sid>61615,92300,92301,92302,92303,92304,92305,92306</if_sid>
+    <if_sid>61615,92300,92302</if_sid>
     <field name="win.eventdata.eventType">^SetValue$</field>
-    <field name="win.eventdata.targetObject" type="pcre2">(?i)\\+Software\\+Microsoft\\+Windows\\+CurrentVersion\\+(Run|RunOnce)\\+</field>
+    <field name="win.eventdata.targetObject" type="pcre2">(?i)\\+Software\\+(WOW6432Node\\+)?Microsoft\\+Windows\\+CurrentVersion\\+(Run|RunOnce|RunOnceEx|RunServices|RunServicesOnce|Policies\\+Explorer\\+Run)\\+</field>
     <description>SOC-100206 [T1547.001]: Registry Run/RunOnce persistence value set at $(win.eventdata.targetObject) -> $(win.eventdata.details) by $(win.eventdata.image)</description>
     <mitre>
       <id>T1547.001</id>
@@ -173,16 +200,39 @@
   </rule>
 
   <!-- =========================================================================
+       Rule 9b: 100208 - Tuning exclusion for 100206 (level 0, no alert)
+       OneDrive (per-user install) re-registering its own autostart on Win10:
+         OneDrive.exe      -> Run\OneDrive = "...\OneDrive\OneDrive.exe" /background
+         OneDriveSetup.exe -> RunOnce\Delete Cached [Standalone ]Update Binary
+       Image, value name AND data all have to match, so a fake "OneDrive" value
+       pointing somewhere else still fires 100206.
+       ========================================================================= -->
+  <rule id="100208" level="0">
+    <if_sid>100206</if_sid>
+    <field name="win.eventdata.image" type="pcre2">(?i)^C:\\+Users\\+[^\\]+\\+AppData\\+Local\\+Microsoft\\+OneDrive\\+(OneDrive|Update\\+OneDriveSetup)\.exe$</field>
+    <field name="win.eventdata.targetObject" type="pcre2">(?i)\\+CurrentVersion\\+(Run\\+OneDrive|RunOnce\\+Delete Cached (Standalone )?Update Binary)$</field>
+    <field name="win.eventdata.details" type="pcre2">(?i)^(\\?"C:\\+Users\\+[^\\]+\\+AppData\\+Local\\+Microsoft\\+OneDrive\\+OneDrive\.exe\\?" /background|C:\\+Windows\\+system32\\+cmd\.exe /q /c del /q \\?"C:\\+Users\\+[^\\]+\\+AppData\\+Local\\+Microsoft\\+OneDrive\\+(Update|StandaloneUpdater)\\+OneDriveSetup\.exe\\?")$</field>
+    <description>SOC-100208 [T1547.001]: Benign OneDrive autostart self-registration suppressed (tuning exclusion for 100206)</description>
+    <group>persistence,registry_run_key,tuning_exclusion,</group>
+  </rule>
+
+  <!-- =========================================================================
        Rule 10: 100207 - T1685.005 Windows Event Log Cleared (1102 / 104)
        Tactic: Defense Impairment (TA0112, ATT&CK v19) | Host: Win10
        Trigger: wevtutil cl Security
+       Provider check: other System providers (AccessBroker, NetworkProvider)
+       also use IDs 104/1102 for unrelated events.
+       Wazuh 4.14.9's MITRE DB predates v19 and doesn't know T1685.005, so the
+       v18 id T1070.001 is listed too - that's the one the dashboard shows.
        ========================================================================= -->
   <rule id="100207" level="12">
     <if_sid>60117,60000,60001,60002,60100,60103,61100,63103,63104</if_sid>
+    <field name="win.system.providerName">^Microsoft-Windows-Eventlog$|^Eventlog$</field>
     <field name="win.system.eventID">^1102$|^104$</field>
     <description>SOC-100207 [T1685.005]: Windows Event Log ($(win.system.channel)) cleared (Event $(win.system.eventID)) on $(win.system.computer)</description>
     <mitre>
-      <id>T1685</id>
+      <id>T1685.005</id>
+      <id>T1070.001</id>
     </mitre>
     <group>defense_impairment,logs_cleared,</group>
   </rule>

@@ -1,23 +1,27 @@
 title: Linux Persistence via SSH Authorized Keys Modification (SOC-100202)
 id: 6d4f8a10-1202-4b19-9a06-000000100202
-status: stable
-description: Detects writes or modifications to SSH authorized_keys files monitored by auditd file watches.
-references:
-  - https://attack.mitre.org/techniques/T1098/004/
+status: experimental
+description: Detects changes to SSH authorized_keys or authorized_keys2 files watched by auditd - appends, truncation, or rename-based replacement such as sed -i or mv.
 author: SOC Capstone Team
 date: 2026-10-19
+modified: 2026-10-24
 tags:
   - attack.persistence
+  - attack.privilege-escalation
   - attack.t1098.004
 logsource:
   product: linux
   service: auditd
 detection:
+  # key and exe come from the SYSCALL record, name from a PATH record. This only works on
+  # backends that merge an audit event's records into one event (Wazuh's audit log_format,
+  # Auditbeat), which is how the Wazuh rule 100202 sees them.
   selection:
     key:
       - 'ssh_authorized_keys'
       - 'ssh'
-    name|endswith: 'authorized_keys'
+      - 'rootkey'
+    name|re: '(^|/)authorized_keys2?$'
   filter_sshd:
     exe: '/usr/sbin/sshd'
   condition: selection and not filter_sshd
